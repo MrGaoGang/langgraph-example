@@ -222,42 +222,21 @@ export class ReactLangGraphAgent extends AbstractAgent {
           } as any);
 
           const baseURL = process.env.OPENAI_BASE_URL;
-          const apiKey = process.env.OPENAI_API_KEY;
           let modelName = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
-
           // OpenRouter 的模型名通常需要带 provider 前缀，例如 `openai/gpt-4o`。
           // 如果你只写了 `gpt-4o`，OpenRouter 可能会直接返回 400。
           if (baseURL?.includes("openrouter.ai") && !modelName.includes("/")) {
             modelName = `openai/${modelName}`;
           }
           const model = new ChatOpenAI({
-            modelName: `openai/gpt-4o`,
+            modelName: modelName,
             temperature: 0.7,
             apiKey: process.env.OPENROUTER_API_KEY,
             configuration: {
               baseURL: "https://openrouter.ai/api/v1",
             },
           });
-          // 1. JSON Schema (不是 zod!)
-          const addSchema = {
-            type: "object",
-            properties: {
-              a: { type: "number" },
-              b: { type: "number" },
-            },
-            required: ["a", "b"],
-          };
 
-          // 2. 构建 DynamicStructuredTool
-          // const addTool = new DynamicStructuredTool({
-          //   name: "add",
-          //   description: "Return a + b",
-          //   schema: addSchema,
-          //   func: async (input) => {
-          //     const { a, b } = input;
-          //     return `${a + b}`;
-          //   },
-          // });
 
           const tools = coerceTools(input.tools);
           console.log("tools", tools);
