@@ -1,0 +1,41 @@
+{
+  "name": "ts-nextjs-copilotkit-local-agent",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "@copilotkit/react-core": "latest",
+    "@copilotkit/react-ui": "latest",
+    "@copilotkit/runtime": "latest",
+    "@ag-ui/langgraph": "latest",
+    "@ag-ui/client": "latest",
+    "@langchain/core": "1.1.7",
+    "@langchain/langgraph": "1.0.7",
+    "@ag-ui/langchain": "latest",
+    "@langchain/openai": "1.2.0",
+    "zod": "latest",
+    "zod-to-json-schema": "3.25.0",
+    "openai": "4.103.0",
+    "rxjs": "7.8.1"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "tailwindcss": "^4",
+    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/typography": "^0.5.16",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
