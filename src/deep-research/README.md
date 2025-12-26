@@ -2,6 +2,8 @@
 
 一个基于 LangChain（TS）的“深度调研”Agent 封装：支持 `SIMPLE / DEEP / AUTO` 三种模式，提供一次性返回结果与流式输出两种调用方式。
 
+> UI Demo： 启动仓库下的 langgraph-agui 项目，访问 `http://localhost:3000/pages/deepsearch` 可以看到 UI Demo
+
 ## 功能概览
 
 - `AUTO`：先由 `Classifier` 自动决策走 `SIMPLE` 还是 `DEEP`，并给出建议深度

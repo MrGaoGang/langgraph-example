@@ -1,13 +1,12 @@
 "use client";
 
-import "./globals.css";
 import { CopilotSidebar } from "@copilotkit/react-ui";
 import { useAgent } from "@copilotkit/react-core/v2";
 import { z } from "zod";
-import { useColorChange } from "./hooks/color-change";
-import { useCountChange } from "./hooks/count-change";
-import { FrontendCounterSection } from "./componentts/FrontendCounterSection";
-import { useHumanInTheLoopHooks } from "./hooks/human_in_the_loop";
+import { useColorChange } from "../../hooks/color-change";
+import { useCountChange } from "../../hooks/count-change";
+import { FrontendCounterSection } from "../../components/FrontendCounterSection";
+import { useHumanInTheLoopHooks } from "../../hooks/human_in_the_loop";
 
 export default function HomePage() {
   const { agent } = useAgent({

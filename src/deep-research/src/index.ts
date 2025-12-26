@@ -72,6 +72,24 @@ export class DeepResearchAgent {
   }
 
   /**
+   * 获取研究 Agent 及相关Prompt
+   * @param request 
+   * @returns 
+   */
+  async getResearchAgent(request: DeepResearchRequest) {
+    const { decision, depth } = await this.determineMode(request);
+    if (decision.mode === "SIMPLE") {
+      const agent = createSimpleSearcherAgent();
+      const userPrompt = this.buildSimpleSearcherPrompt(request);
+      return { agent, userPrompt };
+    } else {
+      const agent = createSupervisorAgent();
+      const supervisorPrompt = this.buildSupervisorPrompt(request, depth);
+      return { agent, supervisorPrompt };
+    }
+  }
+
+  /**
    * 流式返回，适合前端逐步展示思考过程与中间结果。
    */
   async *researchStream(
@@ -133,9 +151,11 @@ export class DeepResearchAgent {
         return;
       }
 
-      for await (const chunk of agent.stream({
+      const stream = await agent.stream({
         messages: [{ role: "user", content: supervisorPrompt }],
-      })) {
+      });
+
+      for await (const chunk of stream) {
         yield {
           type: "intermediate_result",
           content: chunk,
@@ -196,9 +216,7 @@ export class DeepResearchAgent {
     return clamped;
   }
 
-  private buildSimpleSearcherPrompt(
-    request: DeepResearchRequest
-  ): string {
+  private buildSimpleSearcherPrompt(request: DeepResearchRequest): string {
     let prompt = `请使用网络搜索工具，对下面的问题进行一次高效、快速的检索并给出简明答案。\n\n问题：${request.query}`;
 
     if (request.context) {

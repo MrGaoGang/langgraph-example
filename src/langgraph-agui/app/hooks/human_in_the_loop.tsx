@@ -1,6 +1,6 @@
 import { useCopilotAction, useFrontendTool, useHumanInTheLoop } from "@copilotkit/react-core";
 
-import StepsFeedback from "../componentts/StepsFeedback";
+import StepsFeedback from "../components/StepsFeedback";
 
 export function useHumanInTheLoopHooks() {
   useHumanInTheLoop({

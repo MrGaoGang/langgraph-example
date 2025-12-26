@@ -23,7 +23,8 @@
     "zod": "latest",
     "zod-to-json-schema": "3.25.0",
     "openai": "4.103.0",
-    "rxjs": "7.8.1"
+    "rxjs": "7.8.1",
+    "deep-research": "workspace:*"
   },
   "devDependencies": {
     "typescript": "latest",
