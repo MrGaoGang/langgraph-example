@@ -84,8 +84,8 @@ export class DeepResearchAgent {
       return { agent, userPrompt };
     } else {
       const agent = createSupervisorAgent();
-      const supervisorPrompt = this.buildSupervisorPrompt(request, depth);
-      return { agent, supervisorPrompt };
+      const userPrompt = this.buildSupervisorPrompt(request, depth);
+      return { agent, userPrompt };
     }
   }
 

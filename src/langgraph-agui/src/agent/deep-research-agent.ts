@@ -5,9 +5,7 @@ import {
   BaseEvent,
 } from "@ag-ui/client";
 import { Observable } from "rxjs";
-import { ChatOpenAI } from "@langchain/openai";
-import { createReactAgent } from "@langchain/langgraph/prebuilt";
-import { zodToJsonSchema } from "zod-to-json-schema";
+
 import {
   AIMessage,
   HumanMessage,
@@ -15,167 +13,7 @@ import {
   ToolMessage,
   BaseMessage,
 } from "@langchain/core/messages";
-import { DynamicStructuredTool } from "@langchain/core/tools";
-import { z } from "zod";
-import {
-  DeepResearchAgent,
-  DeepResearchRequest,
-} from "deep-research/src/index";
-type AnyTool = Record<string, any>;
-
-type JsonSchema = {
-  type?: string;
-  description?: string;
-  properties?: Record<string, JsonSchema>;
-  items?: JsonSchema;
-  required?: string[];
-  enum?: Array<string | number | boolean | null>;
-};
-
-type CopilotKitParam = {
-  name?: string;
-  description?: string;
-  type?: string;
-  required?: boolean;
-  enum?: any[];
-  attributes?: CopilotKitParam[];
-};
-
-function transformSchema(parameters: any): JsonSchema {
-  if (!parameters) {
-    return { type: "object", properties: {} };
-  }
-
-  if (Array.isArray(parameters)) {
-    const properties: Record<string, JsonSchema> = {};
-    const required: string[] = [];
-
-    for (const param of parameters) {
-      const name = String(param?.name ?? "").trim();
-      if (!name) continue;
-
-      let fieldSchema: JsonSchema = {};
-      const type = String(param?.type ?? "").toLowerCase();
-
-      if (Array.isArray(param?.enum) && param.enum.length > 0) {
-        fieldSchema.enum = param.enum as any;
-        if (param.enum.every((v: any) => typeof v === "string")) {
-          fieldSchema.type = "string";
-        } else if (param.enum.every((v: any) => typeof v === "number")) {
-          fieldSchema.type = "number";
-        }
-      } else if (type === "string") {
-        fieldSchema.type = "string";
-      } else if (type === "number" || type === "integer") {
-        fieldSchema.type = "number";
-      } else if (type === "boolean") {
-        fieldSchema.type = "boolean";
-      } else if (type === "object" && Array.isArray(param?.attributes)) {
-        fieldSchema = transformSchema(param.attributes);
-      } else if (type.endsWith("[]")) {
-        fieldSchema.type = "array";
-        const itemType = type.slice(0, -2);
-        if (itemType === "string") {
-          fieldSchema.items = { type: "string" };
-        } else if (itemType === "number" || itemType === "integer") {
-          fieldSchema.items = { type: "number" };
-        } else if (itemType === "boolean") {
-          fieldSchema.items = { type: "boolean" };
-        } else {
-          fieldSchema.items = {};
-        }
-      }
-
-      if (param?.description) {
-        fieldSchema.description = param.description;
-      }
-
-      properties[name] = fieldSchema;
-      if (param?.required) {
-        required.push(name);
-      }
-    }
-
-    return {
-      type: "object",
-      properties,
-      required,
-    };
-  }
-
-  return parameters;
-}
-
-function aguiToolToDynamicStructuredTool(tool: AnyTool): DynamicStructuredTool {
-  const name = String(tool?.name ?? "").trim() || "unnamed_tool";
-  const description = String(tool?.description ?? "");
-  const schema = transformSchema(tool?.parameters);
-
-  return new DynamicStructuredTool({
-    name,
-    description,
-    // 老版本只支持 object schema
-    schema: schema as any,
-    func: async () => "",
-  });
-}
-
-function coerceTools(incoming: unknown): AnyTool[] {
-  const tools = (Array.isArray(incoming) ? incoming : []) as AnyTool[];
-
-  return tools.map((tool) => {
-    if (
-      tool &&
-      typeof tool?.name === "string" &&
-      typeof tool?.invoke === "function"
-    ) {
-      return tool;
-    }
-
-    return aguiToolToDynamicStructuredTool(tool);
-  });
-}
-
-type AnyIncomingMessage = Record<string, any>;
-
-function safeJsonParse(raw: unknown): any {
-  if (typeof raw !== "string") return raw;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return raw;
-  }
-}
-
-function normalizeToolCalls(toolCalls: unknown): any[] | undefined {
-  if (!toolCalls) return undefined;
-  const calls = Array.isArray(toolCalls) ? toolCalls : [];
-
-  return calls
-    .map((tc: any) => {
-      if (tc?.function?.name) {
-        return {
-          id: tc.id,
-          name: tc.function.name,
-          args:
-            typeof tc.function.arguments === "string"
-              ? safeJsonParse(tc.function.arguments)
-              : tc.function.arguments,
-        };
-      }
-      if (tc?.name) {
-        return {
-          id: tc.id,
-          name: tc.name,
-          args: tc.args ?? {},
-        };
-      }
-      return undefined;
-    })
-    .filter(Boolean);
-}
-
-
+import { DeepResearchAgent } from "deep-research/src/index";
 
 export class DeepResearchAdapterAgent extends AbstractAgent {
   run(input: RunAgentInput): Observable<BaseEvent> {
@@ -188,23 +26,13 @@ export class DeepResearchAdapterAgent extends AbstractAgent {
             runId: input.runId,
           } as any);
 
-          // const baseURL = process.env.OPENAI_BASE_URL;
-          // let modelName = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
-          // // OpenRouter 的模型名通常需要带 provider 前缀，例如 `openai/gpt-4o`。
-          // // 如果你只写了 `gpt-4o`，OpenRouter 可能会直接返回 400。
-          // if (baseURL?.includes("openrouter.ai") && !modelName.includes("/")) {
-          //   modelName = `openai/${modelName}`;
-          // }
-    
-
-          // const tools = coerceTools(input.tools);
-          // console.log("tools", tools);
-          // const messages = coerceMessages(input.messages);
-
           const deepsearch = new DeepResearchAgent();
+          const content =
+            input?.messages?.[input.messages.length - 1]?.content ?? "";
           const { agent, userPrompt } = await deepsearch.getResearchAgent({
-            query: input?.messages?.[input.messages.length - 1]?.content ?? "",
-            mode: "AUTO",
+            query: content,
+            mode: 'AUTO',
+            context: "技术方案调研",
           });
 
           const stream = await agent.streamEvents(
