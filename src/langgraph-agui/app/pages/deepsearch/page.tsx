@@ -20,7 +20,7 @@ export default function HomePage() {
         style={{ marginBottom: 16, borderTop: "1px solid green" }}
       >
         <div>
-          <div className="app-section-title">Agent 运行态（useAgent）</div>
+          <div className="app-section-title">Agent 运行态</div>
           <p className="app-section-text">
             Agent ID：{agent.agentId ?? "未知"}
           </p>
@@ -37,10 +37,6 @@ export default function HomePage() {
       </div>
       <CopilotChat
         suggestions={[
-          {
-            title: "比较 Llama 3.1 和 GPT-4o",
-            message: "比较 Llama 3.1 和 GPT-4o 在开放权重/部署成本上的差异。",
-          },
           {
             title: "langchain TS 框架 最新发布的动态",
             message: "搜索一下langchain TS 框架 最新发布的动态。",

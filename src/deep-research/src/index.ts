@@ -29,7 +29,7 @@ export class DeepResearchAgent {
     this.verbose = config.verbose ?? false;
     this.defaultMode = config.defaultMode ?? "AUTO";
     this.defaultDepth = config.defaultDepth ?? 3;
-    this.maxDepth = config.maxDepth ?? 6;
+    this.maxDepth = config.maxDepth ?? 4;
   }
 
   toolsCallSubscribe(){
@@ -252,3 +252,6 @@ export class DeepResearchAgent {
 
 // 便于外部直接复用类型
 export * from "./types";
+
+
+export { DeepResearchToolName } from "./tools/name";

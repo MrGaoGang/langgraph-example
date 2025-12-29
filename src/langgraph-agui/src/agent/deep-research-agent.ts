@@ -3,6 +3,7 @@ import {
   RunAgentInput,
   EventType,
   BaseEvent,
+  Message,
 } from "@ag-ui/client";
 import { Observable, Subscriber } from "rxjs";
 
@@ -14,15 +15,19 @@ import {
   BaseMessage,
   isToolMessageChunk,
 } from "@langchain/core/messages";
-import { DeepResearchAgent } from "deep-research/src/index";
+import {
+  DeepResearchAgent,
+  DeepResearchToolName,
+} from "deep-research/src/index";
 import { Command } from "@langchain/langgraph";
+import { getToolActionHandler } from "./deep-research-tool-factory";
 
 /**
  * 当图处于这些工具调用阶段时，隐藏 LLM 文本输出（仅影响 TEXT_MESSAGE_CHUNK）。
  *
  * 说明：用模块级常量可以避免方法被非绑定调用时 `this` 丢失导致的运行时错误。
  */
-const DEFAULT_IGNORED_TOOLS = ["plan_research"] as const;
+const DEFAULT_IGNORED_TOOLS = [DeepResearchToolName.PlanResearch] as const;
 
 /**
  * 运行一次 DeepResearch 的过程中会用到的共享上下文。
@@ -31,7 +36,8 @@ const DEFAULT_IGNORED_TOOLS = ["plan_research"] as const;
  * - 生命周期：`run()` 内部单次执行创建，用完即丢弃；不会跨 run 复用。
  * - 注意：其中 `agent/config/inputStream` 等字段会在不同阶段逐步补齐。
  */
-interface DeepResearchContext {
+// 运行一次 DeepResearch 的过程中会用到的共享上下文。
+export interface DeepResearchContext {
   /**
    * 来自 AG-UI 的输入对象，包含 thread/run 标识与历史消息等。
    */
@@ -87,12 +93,6 @@ interface DeepResearchContext {
 
 export class DeepResearchAdapterAgent extends AbstractAgent {
   /**
-   * 需要被“隐藏”的工具名列表：当 agent 正在调用这些工具时，
-   * 不将 LLM 输出的文本 chunk 透传到前端（避免暴露规划/中间过程）。
-   */
-  private readonly ignoredTools: readonly string[] = DEFAULT_IGNORED_TOOLS;
-
-  /**
    * AG-UI Agent 统一入口：把 deep-research/LangGraph 的执行流适配为 AG-UI 事件流。
    *
    * 关键行为：
@@ -114,6 +114,7 @@ export class DeepResearchAdapterAgent extends AbstractAgent {
       // 注意：Observable 的执行体不能直接标记为 async，因此手动起一个 async IIFE
       (async () => {
         try {
+          console.log("Start run");
           await this.initializeAgent(context);
           await this.prepareExecution(context);
           await this.handleStreamEvents(context);
@@ -179,30 +180,31 @@ export class DeepResearchAdapterAgent extends AbstractAgent {
   private async prepareExecution(context: DeepResearchContext) {
     const { input, agent, config } = context;
 
-    // UI 输入的最后一条消息，用于判断是否携带了“工具决策”(role === tool)
-    const lastMsg = input.messages?.[input.messages.length - 1];
-
     // 当前 LangGraph 状态，用于判断是否处于 interrupt 中
     const state = await agent.getState(config);
     console.log("DEBUG: state: ", state);
-
+    // UI 输入的最后一条消息，用于判断是否携带了“工具决策”（role === tool)
+    const userLastMsg = input.messages?.[input.messages.length - 1];
+    const aiLastMsg = state.values.messages?.[state.values.messages.length - 1];
     // 根据当前状态判断是否需要隐藏工具相关输出
-    await this.determineIgnoreToolsMessage(context);
+    const { toolName } = await this.determineIgnoreToolsMessage(context);
 
     const isInterrupted =
       state.tasks.length > 0 && state.tasks[0].interrupts.length > 0;
-    console.log(isInterrupted, "<<<isInterrupted ======= state: ", lastMsg);
+    console.log(
+      isInterrupted,
+      "<<<isInterrupted ===>>> toolName",
+      toolName,
+      "=== userLastMsg=== ",
+      userLastMsg,
+      "==aiLastMsg===",
+      aiLastMsg
+    );
 
-    if (isInterrupted && lastMsg?.role === "tool") {
+    if (isInterrupted) {
       // 从 interrupt 续跑：lastMsg.content 约定为前端回传的决策类型
-      const decision = lastMsg.content;
-      console.log("Resuming with decision:", decision);
-
-      // 使用 Command.resume 把决策喂回图中继续执行
-      context.inputStream = await agent.streamEvents(
-        new Command({ resume: { decisions: [{ type: decision }] } }),
-        config
-      );
+      // 根据工具名称和决策类型执行相应的操作
+      this.dispatchToolsAction(context, toolName, userLastMsg, aiLastMsg);
     } else {
       // 正常启动：将 deep-research 返回的最终 prompt 作为用户消息输入
       context.inputStream = await agent.streamEvents(
@@ -210,6 +212,25 @@ export class DeepResearchAdapterAgent extends AbstractAgent {
         config
       );
     }
+  }
+
+  /**
+   * 根据工具名称和决策类型执行相应的操作
+   * @param context 上下文对象
+   * @param toolName 工具名称
+   * @param decision 决策类型
+   * @returns
+   */
+  private async dispatchToolsAction(
+    context: DeepResearchContext,
+    toolName: DeepResearchToolName,
+    userLastMsg: Message,
+    aiLastMsg: AIMessage | ToolMessage
+  ) {
+    const handler = getToolActionHandler(toolName);
+    if (!handler) return;
+
+    await handler(context, toolName, userLastMsg, aiLastMsg);
   }
 
   /**
@@ -243,17 +264,18 @@ export class DeepResearchAdapterAgent extends AbstractAgent {
       toolCalls.map((call: any) => String(call?.name ?? ""))
     );
 
+    console.log(
+      "ignoreToolsMessage: ",
+      isLastMsgToolCall,
+      "====toolCallNames=====",
+      toolCallNames
+    );
     context.ignoreToolsMessage =
       isLastMsgToolCall &&
       DEFAULT_IGNORED_TOOLS.some((toolName) => toolCallNames.has(toolName));
 
-    if (isLastMsgToolCall) {
-      return {
-        toolNmae: toolCalls[0]?.name,
-      };
-    }
     return {
-      toolNmae: "",
+      toolName: toolCalls[0]?.name,
     };
   }
 
@@ -306,6 +328,7 @@ export class DeepResearchAdapterAgent extends AbstractAgent {
     }
   }
 
+  private frontendToolsCall = new Map<string, boolean>();
   /**
    * 流结束后的收尾逻辑：
    * - 再次读取 state，看是否进入 interrupt（需要用户审批/决策）
@@ -315,37 +338,41 @@ export class DeepResearchAdapterAgent extends AbstractAgent {
   private async handlePostExecution(context: DeepResearchContext) {
     const { agent, config, observer, messageId, input } = context;
 
-    // 流结束后读取最终 state：用于判断是否需要进入 interrupt 交互
-    const finalState = await agent.getState(config);
-    console.log("finalState: ", finalState);
+    // // 流结束后读取最终 state：用于判断是否需要进入 interrupt 交互
+    // const finalState = await agent.getState(config);
+    // // console.log("finalState: ", finalState);
 
-    if (
-      finalState.tasks.length > 0 &&
-      finalState.tasks[0].interrupts.length > 0
-    ) {
-      const interrupt = finalState.tasks[0].interrupts[0];
-      console.log("Agent interrupted:", interrupt);
+    // console.log("finalState.tasks: ", JSON.stringify(finalState.tasks));
+    // if (
+    //   finalState.tasks.length > 0 &&
+    //   finalState.tasks[0].interrupts.length > 0
+    // ) {
+    //   const interrupt = finalState.tasks[0].interrupts[0];
 
-      const interruptValue = interrupt.value;
+    //   const interruptValue = interrupt.value;
 
-      // deep-research 约定：interrupt.value.action_requests[0] 描述需要前端确认的动作
-      if (
-        interruptValue &&
-        interruptValue.action_requests &&
-        interruptValue.action_requests.length > 0
-      ) {
-        const action = interruptValue.action_requests[0];
-
-        // 通过 TOOL_CALL_CHUNK 通知前端：显示一个“待确认的工具调用/动作”
-        observer.next({
-          type: EventType.TOOL_CALL_CHUNK,
-          toolCallId: "interrupt_" + Date.now(),
-          toolCallName: action.name,
-          parentMessageId: messageId,
-          delta: JSON.stringify(action.arguments),
-        } as any);
-      }
-    }
+    //   // deep-research 约定：interrupt.value.action_requests[0] 描述需要前端确认的动作
+    //   if (
+    //     interruptValue &&
+    //     interruptValue.action_requests &&
+    //     interruptValue.action_requests.length > 0
+    //   ) {
+    //     const action = interruptValue.action_requests[0];
+    //     if (this.frontendToolsCall.has(action.name)) {
+    //       return;
+    //     }
+    //     console.log("Agent interrupted:", interrupt);
+    //     this.frontendToolsCall.set(action.name, true);
+    //     // 通过 TOOL_CALL_CHUNK 通知前端：显示一个“待确认的工具调用/动作”
+    //     observer.next({
+    //       type: EventType.TOOL_CALL_CHUNK,
+    //       toolCallId: "interrupt_" + Date.now(),
+    //       toolCallName: action.name,
+    //       parentMessageId: messageId,
+    //       delta: JSON.stringify(action.arguments),
+    //     } as any);
+    //   }
+    // }
 
     observer.next({
       type: EventType.RUN_FINISHED,

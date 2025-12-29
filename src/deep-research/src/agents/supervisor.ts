@@ -28,7 +28,10 @@ export function createSupervisorAgent(): Agent {
       humanInTheLoopMiddleware({
         interruptOn: {
           plan_research: true, // All decisions (approve, edit, reject) allowed
-          execute_research: true, // All decisions (approve, edit, reject) allowed
+          // execute_research: {
+          //   allowedDecisions: ["edit", "reject"],
+          // },
+          execute_research: true
         },
         // Prefix for interrupt messages - combined with tool name and args to form the full message
         // e.g., "Tool execution pending approval: execute_sql with query='DELETE FROM...'"

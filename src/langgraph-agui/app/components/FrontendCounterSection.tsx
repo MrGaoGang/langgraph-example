@@ -1,5 +1,4 @@
 "use client";
-
 export function FrontendCounterSection({ counter }: { counter: number }) {
   return (
     <div className="app-section">
