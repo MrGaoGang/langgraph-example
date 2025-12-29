@@ -13,6 +13,7 @@
     "@langchain/community": "1.1.1",
     "@langchain/openai": "1.2.0",
     "@langchain/tavily": "1.2.0",
+    "@langchain/langgraph": "1.0.7",
     "langchain": "1.2.3",
     "@langchain/core": "^1.1.8",
     "zod": "^3.23.0",
@@ -21,5 +22,4 @@
   "devDependencies": {
     "dotenv": "^16.4.5"
   }
-  
 }

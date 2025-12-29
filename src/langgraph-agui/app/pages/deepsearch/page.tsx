@@ -11,7 +11,7 @@ export default function HomePage() {
     agentId: "deepsearch_agent",
   });
 
-  // useToolsCallHooks();
+  useToolsCallHooks();
 
   return (
     <div style={{ width: "100%", height: "80vh" }}>

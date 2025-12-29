@@ -8,6 +8,9 @@ import { toolMonitoringMiddleware } from "../middleware/monitoring";
 import { MemorySaver } from "@langchain/langgraph";
 import { humanInTheLoopMiddleware } from "langchain";
 
+// Singleton checkpointer to persist state across requests
+const checkpointer = new MemorySaver();
+
 /**
  * 创建 Supervisor Agent
  * 协调 Planner 和 Researcher 的工作，管理整体研究流程
@@ -25,7 +28,7 @@ export function createSupervisorAgent(): Agent {
       humanInTheLoopMiddleware({
         interruptOn: {
           plan_research: true, // All decisions (approve, edit, reject) allowed
-    
+          execute_research: true, // All decisions (approve, edit, reject) allowed
         },
         // Prefix for interrupt messages - combined with tool name and args to form the full message
         // e.g., "Tool execution pending approval: execute_sql with query='DELETE FROM...'"
@@ -33,6 +36,6 @@ export function createSupervisorAgent(): Agent {
         descriptionPrefix: "Tool execution pending approval",
       }),
     ],
-    checkpointer: new MemorySaver(),
+    checkpointer: checkpointer as any,
   });
 }
