@@ -4,14 +4,12 @@ import { createAgent } from "../agents/agentFactory";
 import { getModel } from "../model/model";
 import { PLANNER_SYSTEM_PROMPT } from "../prompts/prompts";
 import { Agent } from "../types";
-import { toolOutputMiddleware } from "../middleware/tools-output";
 
 export function createPlannerAgent(): Agent {
   const model = getModel({ temperature: 0.2 });
   return createAgent({
     model,
     systemPrompt: PLANNER_SYSTEM_PROMPT,
-    middleware: [toolOutputMiddleware],
   });
 }
 

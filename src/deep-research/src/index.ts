@@ -32,8 +32,7 @@ export class DeepResearchAgent {
     this.maxDepth = config.maxDepth ?? 4;
   }
 
-  toolsCallSubscribe(){
-    toolOutputSubject.unsubscribe();
+  subagentToolsCall(){
     return toolOutputSubject;
   }
 

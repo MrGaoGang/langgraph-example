@@ -3,6 +3,7 @@ import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { DeepResearchToolName } from "deep-research/src/index";
 import type { DeepResearchContext } from "./deep-research-agent";
 import { Message } from "@ag-ui/client";
+import logger from "../utils/logger";
 
 export type ToolActionHandler = (
   context: DeepResearchContext,
@@ -22,6 +23,7 @@ const planResearchHandler: ToolActionHandler = async (
 
   if (userLastMsg?.role !== "tool") return;
 
+  logger.info("DEBUG: planResearchHandler userLastMsg: ", userLastMsg);
   context.inputStream = await agent.streamEvents(
     new Command({
       resume: { decisions: [{ type: userLastMsg.content }] },
@@ -42,6 +44,7 @@ const executeResearchHandler: ToolActionHandler = async (
 
   // 1. 拒绝场景：直接把 reject 决策喂回去
   if (userLastMsg?.role === "tool" && userLastMsg.content === "reject") {
+    logger.info("DEBUG: executeResearchHandler tools reject: ", userLastMsg);
     context.inputStream = await agent.streamEvents(
       new Command({
         resume: { decisions: [{ type: userLastMsg.content }] },
@@ -55,6 +58,7 @@ const executeResearchHandler: ToolActionHandler = async (
   // - 前端以 tool 消息回传 JSON 参数时，优先使用前端编辑后的内容
   // - 否则退回到 AI 上一次 tool_call 的原始 args
   const isToolDecision = userLastMsg?.role === "tool";
+  logger.info("DEBUG: executeResearchHandler isToolDecision: ", isToolDecision);
   const editedArgs = isToolDecision
     ? JSON.parse(userLastMsg.content)
     : aiLastMsg?.tool_calls?.[0]?.args ?? {};

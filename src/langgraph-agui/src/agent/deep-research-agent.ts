@@ -21,6 +21,8 @@ import {
 } from "deep-research/src/index";
 import { Command } from "@langchain/langgraph";
 import { getToolActionHandler } from "./deep-research-tool-factory";
+import { retryAsync } from "../utils/retry";
+import logger from "../utils/logger";
 
 /**
  * 当图处于这些工具调用阶段时，隐藏 LLM 文本输出（仅影响 TEXT_MESSAGE_CHUNK）。
@@ -146,6 +148,18 @@ export class DeepResearchAdapterAgent extends AbstractAgent {
 
     const deepsearch = new DeepResearchAgent();
 
+    deepsearch.subagentToolsCall().subscribe((data) => {
+      const messageId = Date.now().toString();
+      logger.success('subagentToolsCall' , data)
+      observer.next({
+        type: EventType.TOOL_CALL_CHUNK,
+        toolCallId: data?.callId,
+        toolCallName: data?.name,
+        parentMessageId: messageId,
+        delta: JSON.stringify(data?.args || {}),
+      } as any);
+    });
+
     // 取输入 messages 的最后一条作为本轮 query（通常是用户最后一句）
     const content = input?.messages?.[input.messages.length - 1]?.content ?? "";
 
@@ -153,7 +167,7 @@ export class DeepResearchAdapterAgent extends AbstractAgent {
     const { agent, userPrompt } = await deepsearch.getResearchAgent({
       query: typeof content === "string" ? content : JSON.stringify(content),
       mode: "DEEP",
-      context: "技术方案调研",
+      context: "要求回答简洁 300字以内",
     });
 
     // LangGraph 运行配置：thread_id 用于把状态（checkpoints）与 thread 关联
@@ -229,8 +243,14 @@ export class DeepResearchAdapterAgent extends AbstractAgent {
   ) {
     const handler = getToolActionHandler(toolName);
     if (!handler) return;
-
     await handler(context, toolName, userLastMsg, aiLastMsg);
+    // 新增重试机制
+    // await retryAsync(
+    //   async () => await handler(context, toolName, userLastMsg, aiLastMsg),
+    //   {
+    //     attempts: 3,
+    //   }
+    // );
   }
 
   /**
@@ -294,6 +314,7 @@ export class DeepResearchAdapterAgent extends AbstractAgent {
     const messageId = Date.now().toString();
     context.messageId = messageId;
 
+    if (!inputStream) return;
     // for-await 消费异步事件流，直到图执行完成或抛错
     for await (const event of inputStream) {
       // 兼容不同回调命名：chat model vs llm
@@ -328,7 +349,6 @@ export class DeepResearchAdapterAgent extends AbstractAgent {
     }
   }
 
-  private frontendToolsCall = new Map<string, boolean>();
   /**
    * 流结束后的收尾逻辑：
    * - 再次读取 state，看是否进入 interrupt（需要用户审批/决策）

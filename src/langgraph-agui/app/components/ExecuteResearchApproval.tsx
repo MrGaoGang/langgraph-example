@@ -30,6 +30,8 @@ export const ExecuteResearchApproval = ({
   args: z.infer<typeof executeResearchArgsSchema>;
   respond: (value: any) => void;
 }) => {
+
+  console.log(args, "======plan=== ExecuteResearchApproval====");
   const [rawPlan, setRawPlan] = useState(args.plan);
   const [parsedPlan, setParsedPlan] = useState<ResearchPlan | null>(null);
   const [isRawMode, setIsRawMode] = useState(false);

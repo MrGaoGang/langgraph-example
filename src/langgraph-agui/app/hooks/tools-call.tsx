@@ -88,7 +88,7 @@ export function useToolsCallHooks() {
               结果：
             </div>
             <pre className="code" style={{ whiteSpace: "pre-wrap" }}>
-              <ResearchPlanPreview value={result?.plan} />
+              <ResearchPlanPreview value={result?.plan} collapsed={false} />
             </pre>
           </div>
         );
@@ -221,6 +221,50 @@ export function useToolsCallHooks() {
       }
 
       return null;
+    },
+  });
+
+  useFrontendTool({
+    name: "web_search",
+    description: `
+使用 Tavily 进行通用网络搜索，获取高质量搜索结果摘要。
+适用于：快速了解一个主题、查找事实、获取多来源观点。
+`.trim(),
+    parameters: [
+      {
+        name: "query",
+        type: "string",
+        description: "要查询的搜索关键词或问题",
+        required: true,
+      },
+      {
+        name: "searchDepth",
+        type: "string",
+        description: "搜索深度",
+        required: false,
+        enum: ["basic", "advanced"],
+      },
+      {
+        name: "timeRange",
+        type: "string",
+        description: "时间范围",
+        required: false,
+        enum: ["day", "week", "month", "year"],
+      },
+    ],
+
+    render: ({ args }: { args: Record<string, unknown> }) => {
+      console.log("web_search args:", args);
+    
+      const { query } = args || {};
+      if(!query){
+        return null
+      }
+      return (
+        <div className="app-section">
+          <div className="app-section-title">网络搜索：{query}</div>
+        </div>
+      );
     },
   });
 

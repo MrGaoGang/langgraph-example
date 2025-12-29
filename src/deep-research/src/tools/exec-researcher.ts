@@ -16,7 +16,7 @@ export function createResearcherAgent(): Agent {
   const model = getModel({ temperature: 0.4 });
   return createAgent({
     model,
-    tools: [webSearchTool, webExtractTool, webCrawlTool],
+    tools: [webSearchTool],
     systemPrompt: RESEARCHER_SYSTEM_PROMPT,
     middleware: [toolMonitoringMiddleware, toolOutputMiddleware],
   });

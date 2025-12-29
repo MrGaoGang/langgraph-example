@@ -1,5 +1,4 @@
 import { createMiddleware } from "langchain";
-import { Subject, Observable } from "rxjs";
 
 export type ToolCallStatus = "start" | "end" | "error";
 
@@ -12,19 +11,37 @@ export interface ToolCallEvent {
   timestamp: number;
 }
 
+type Listener<T> = (event: T) => void;
+
+export class SimpleEventBus<T> {
+  private listeners: Listener<T>[] = [];
+
+  subscribe(listener: Listener<T>) {
+    this.listeners.push(listener);
+    return {
+      unsubscribe: () => {
+        this.listeners = this.listeners.filter((l) => l !== listener);
+      },
+    };
+  }
+
+  emit(event: T) {
+    this.listeners.forEach((listener) => listener(event));
+  }
+}
+
 /**
  * 工具调用事件总线工厂
- * - 可通过注入自定义 Subject 复用同一条消息流
- * - 返回中包含 middleware 和可订阅的 events$
+ * - 可通过注入自定义 Bus 复用同一条消息流
+ * - 返回中包含 middleware 和可订阅的 bus
  */
 export function createToolOutputMiddleware(
-  subject?: Subject<ToolCallEvent>
+  bus?: SimpleEventBus<ToolCallEvent>
 ): {
   middleware: ReturnType<typeof createMiddleware>;
-  subject: Subject<ToolCallEvent>;
-  events$: Observable<ToolCallEvent>;
+  bus: SimpleEventBus<ToolCallEvent>;
 } {
-  const eventsSubject = subject ?? new Subject<ToolCallEvent>();
+  const eventsBus = bus ?? new SimpleEventBus<ToolCallEvent>();
 
   const middleware = createMiddleware({
     name: "ToolOutputMiddleware",
@@ -37,7 +54,7 @@ export function createToolOutputMiddleware(
       } as const;
 
       // 开始执行
-      eventsSubject.next({
+      eventsBus.emit({
         ...baseEvent,
         status: "start",
         timestamp: Date.now(),
@@ -50,7 +67,7 @@ export function createToolOutputMiddleware(
         if (result && typeof (result as any).then === "function") {
           return (result as Promise<any>)
             .then((value) => {
-              eventsSubject.next({
+              eventsBus.emit({
                 ...baseEvent,
                 status: "end",
                 timestamp: Date.now(),
@@ -58,7 +75,7 @@ export function createToolOutputMiddleware(
               return value;
             })
             .catch((err) => {
-              eventsSubject.next({
+              eventsBus.emit({
                 ...baseEvent,
                 status: "error",
                 error: err,
@@ -67,7 +84,7 @@ export function createToolOutputMiddleware(
               throw err;
             });
         } else {
-          eventsSubject.next({
+          eventsBus.emit({
             ...baseEvent,
             status: "end",
             timestamp: Date.now(),
@@ -75,7 +92,7 @@ export function createToolOutputMiddleware(
           return result;
         }
       } catch (e) {
-        eventsSubject.next({
+        eventsBus.emit({
           ...baseEvent,
           status: "error",
           error: e,
@@ -86,22 +103,19 @@ export function createToolOutputMiddleware(
     },
   });
 
-  const events$ = eventsSubject.asObservable();
-
   return {
     middleware,
-    subject: eventsSubject,
-    events$,
+    bus: eventsBus,
   };
 }
 
 /**
  * 默认的单例：保持与原来 `toolOutputMiddleware` 的用法兼容
- * - 其他地方可以直接 import `toolOutputEvents$` 监听事件
+ * - 其他地方可以直接 import `toolOutputEvents 监听事件
  */
 const defaultBus = createToolOutputMiddleware();
 
 export const toolOutputMiddleware = defaultBus.middleware;
-export const toolOutputSubject = defaultBus.subject;
-export const toolOutputEvents$ = defaultBus.events$;
+export const toolOutputSubject = defaultBus.bus;
+export const toolOutputEvents$ = defaultBus.bus;
 
