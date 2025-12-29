@@ -10,6 +10,7 @@ import {
   webCrawlTool,
 } from "./webTools";
 import { toolMonitoringMiddleware } from "../middleware/monitoring";
+import { toolOutputMiddleware } from "../middleware/tools-output";
 
 export function createResearcherAgent(): Agent {
   const model = getModel({ temperature: 0.4 });
@@ -17,7 +18,7 @@ export function createResearcherAgent(): Agent {
     model,
     tools: [webSearchTool, webExtractTool, webCrawlTool],
     systemPrompt: RESEARCHER_SYSTEM_PROMPT,
-    middleware: [toolMonitoringMiddleware],
+    middleware: [toolMonitoringMiddleware, toolOutputMiddleware],
   });
 }
 

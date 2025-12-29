@@ -29,9 +29,30 @@ export class DeepResearchAdapterAgent extends AbstractAgent {
           const deepsearch = new DeepResearchAgent();
           const content =
             input?.messages?.[input.messages.length - 1]?.content ?? "";
+
+          console.log("tools=========: ", input.tools);
+          const serverToolsShow = input.tools.find(
+            (tool) => tool.name === "serverToolsShow"
+          );
+
+          // if (serverToolsShow) {
+          //   // 监听内部 工具的调用，返回给前端 展示对应的卡片
+          //   deepsearch.toolsCallSubscribe().subscribe((event) => {
+          //     console.log('toolsCallSubscribe event: ', event);
+          //     observer.next({
+          //       type: EventType.TOOL_CALL_CHUNK,
+          //       toolCallId: event.callId,
+          //       toolCallName: serverToolsShow.name,
+          //       parentMessageId: messageId,
+          //       delta: JSON.stringify(event),
+          //     } as any);
+          //   });
+          // }
+
+          // 调用 deepsearch Agent
           const { agent, userPrompt } = await deepsearch.getResearchAgent({
             query: content,
-            mode: 'AUTO',
+            mode: "AUTO",
             context: "技术方案调研",
           });
 
@@ -62,6 +83,7 @@ export class DeepResearchAdapterAgent extends AbstractAgent {
               }
 
               if (chunk.tool_call_chunks && chunk.tool_call_chunks.length > 0) {
+                console.log('chunk.tool_call_chunks: ', chunk.tool_call_chunks);
                 for (const toolCallChunk of chunk.tool_call_chunks) {
                   observer.next({
                     type: EventType.TOOL_CALL_CHUNK,

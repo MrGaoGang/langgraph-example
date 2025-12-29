@@ -4,6 +4,7 @@ import { SIMPLE_SEARCHER_SYSTEM_PROMPT } from "../prompts/prompts";
 import { tavilySearchTool } from "../tools/webTools";
 import { Agent } from "../types";
 import { toolMonitoringMiddleware } from "../middleware/monitoring";
+import { toolOutputMiddleware } from "../middleware/tools-output";
 
 /**
  * Simple Searcher：轻量级 ReAct Agent，只挂载搜索工具。
@@ -13,6 +14,6 @@ export function createSimpleSearcherAgent(): Agent {
     model: getModel({ temperature: 0.1 }),
     tools: [tavilySearchTool], // 仅搜索
     systemPrompt: SIMPLE_SEARCHER_SYSTEM_PROMPT,
-    middleware: [toolMonitoringMiddleware],
+    middleware: [toolMonitoringMiddleware, toolOutputMiddleware],
   });
 }

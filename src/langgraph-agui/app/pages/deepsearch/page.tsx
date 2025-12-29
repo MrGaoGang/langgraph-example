@@ -4,14 +4,17 @@ import { CopilotChat } from "@copilotkit/react-ui";
 import { useAgent } from "@copilotkit/react-core/v2";
 import "./style.css";
 import "@copilotkit/react-ui/styles.css";
+import { useToolsCallHooks } from "@/app/hooks/tools-call";
 
 export default function HomePage() {
   const { agent } = useAgent({
     agentId: "deepsearch_agent",
   });
 
+  // useToolsCallHooks();
+
   return (
-    <div style={{ width: "100%", height: "90vh" }}>
+    <div style={{ width: "100%", height: "80vh" }}>
       <div
         className="app-grid app-section"
         style={{ marginBottom: 16, borderTop: "1px solid green" }}

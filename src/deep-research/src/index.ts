@@ -9,6 +9,7 @@ import {
 import { classifyQuery } from "./agents/classifier";
 import { createSimpleSearcherAgent } from "./agents/simpleSearcher";
 import { createSupervisorAgent } from "./agents/supervisor";
+import { toolOutputSubject } from "./middleware/tools-output";
 
 export interface DeepResearchAgentConfig extends DeepResearchOptions {}
 
@@ -29,6 +30,11 @@ export class DeepResearchAgent {
     this.defaultMode = config.defaultMode ?? "AUTO";
     this.defaultDepth = config.defaultDepth ?? 3;
     this.maxDepth = config.maxDepth ?? 6;
+  }
+
+  toolsCallSubscribe(){
+    toolOutputSubject.unsubscribe();
+    return toolOutputSubject;
   }
 
   /**
@@ -73,8 +79,8 @@ export class DeepResearchAgent {
 
   /**
    * 获取研究 Agent 及相关Prompt
-   * @param request 
-   * @returns 
+   * @param request
+   * @returns
    */
   async getResearchAgent(request: DeepResearchRequest) {
     const { decision, depth } = await this.determineMode(request);
