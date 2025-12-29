@@ -32,6 +32,13 @@ export const planResearchTool = tool(
       });
 
       const lastMessage = result.messages[result.messages.length - 1];
+      // console.log(
+      //   "DEBUG: planRequest=",
+      //   planRequest,
+      //   "lastMessage.content=",
+      //   lastMessage.content
+      // );
+
       return lastMessage.content;
     } catch (error) {
       const errorMessage =
@@ -56,10 +63,7 @@ export const planResearchTool = tool(
 `.trim(),
     schema: z.object({
       request: z.string().describe("用户的研究需求描述"),
-      context: z
-        .string()
-        .optional()
-        .describe("研究的额外背景信息（可选）"),
+      context: z.string().optional().describe("研究的额外背景信息（可选）"),
     }),
   }
 );

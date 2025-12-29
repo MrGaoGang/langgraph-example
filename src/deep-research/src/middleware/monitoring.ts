@@ -14,10 +14,10 @@ export const toolMonitoringMiddleware = createMiddleware({
 
     try {
       const result = handler(request);
-      Logger.debug("Tool completed successfully");
+      Logger.debug(`${request.toolCall.name} tools completed successfully`);
       return result;
     } catch (e) {
-      Logger.debug(`Tool failed: ${e}`);
+      Logger.debug(`${request.toolCall.name} failed: ${e}`);
       throw e;
     }
   },
