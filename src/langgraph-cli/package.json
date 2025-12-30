@@ -1,0 +1,19 @@
+{
+  "name": "langgraph-cli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npx @langchain/langgraph-cli dev",
+    "build": "npx @langchain/langgraph-cli build"
+  },
+  "keywords": [],
+  "author": "",
+  "dependencies": {
+    "deep-research": "workspace:*"
+  },
+  "devDependencies": {
+    "@langchain/langgraph-cli": "1.1.2"
+  },
+  "license": "ISC"
+}

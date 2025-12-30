@@ -1,0 +1,12 @@
+{
+    "$schema": "https://langgra.ph/schema.json",
+    "dependencies": [
+        "."
+    ],
+    "graphs": {
+        "chat": "./src/graph.ts:graph"
+    },
+    "node_version": "20",
+    "env": ".env",
+    "api_version": "0.2"
+}
