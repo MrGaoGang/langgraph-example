@@ -359,7 +359,7 @@ export const ExecuteResearchApproval = ({
         <button
           onClick={handleConfirm}
           style={{
-            backgroundColor: "#2563eb",
+            backgroundColor: "green",
             color: "white",
             padding: "8px 16px",
             borderRadius: 4,
@@ -369,8 +369,22 @@ export const ExecuteResearchApproval = ({
         >
           确认并执行
         </button>
-        <button
+         <button
           onClick={() => respond("reject")}
+          style={{
+            backgroundColor: "#2563eb",
+            color: "white",
+            padding: "8px 16px",
+            borderRadius: 4,
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          重试
+        </button>
+
+        <button
+          onClick={() => respond("cancel")}
           style={{
             backgroundColor: "#dc2626",
             color: "white",

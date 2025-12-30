@@ -42,7 +42,7 @@ const executeResearchHandler: ToolActionHandler = async (
   const { agent, config } = context;
   if (!agent || !config) return;
 
-  // 1. 拒绝场景：直接把 reject 决策喂回去
+  // 1. 拒绝场景：直接把 reject 决策喂回去，会继续重试
   if (userLastMsg?.role === "tool" && userLastMsg.content === "reject") {
     logger.info("DEBUG: executeResearchHandler tools reject: ", userLastMsg);
     context.inputStream = await agent.streamEvents(
@@ -51,6 +51,12 @@ const executeResearchHandler: ToolActionHandler = async (
       }),
       config
     );
+    return;
+  }
+  // 2. 取消场景：直接把 cancel 决策喂回去
+  if (userLastMsg?.role === "tool" && userLastMsg.content === "cancel") {
+    logger.info("DEBUG: executeResearchHandler tools cancel: ", userLastMsg);
+    context.abort?.abort();
     return;
   }
 

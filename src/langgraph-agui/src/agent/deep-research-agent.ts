@@ -16,6 +16,7 @@ import {
   isToolMessageChunk,
 } from "@langchain/core/messages";
 import {
+  DeepModeMainAgentType,
   DeepResearchAgent,
   DeepResearchToolName,
 } from "deep-research/src/index";
@@ -56,7 +57,7 @@ export interface DeepResearchContext {
    * - 用于调用 `getState()` 读取图状态
    * - 用于调用 `streamEvents()` 以事件流形式执行/续跑
    */
-  agent?: any;
+  agent?: DeepModeMainAgentType;
 
   /**
    * LangGraph 运行配置，通常包含 thread_id 等可配置项。
@@ -91,6 +92,11 @@ export interface DeepResearchContext {
    * 前端通常会用这个 ID 将多个 chunk 拼接为同一条消息。
    */
   messageId?: string;
+
+  /**
+   * 用于取消请求的 AbortController。
+   */
+  abort?: AbortController;
 }
 
 export class DeepResearchAdapterAgent extends AbstractAgent {
@@ -171,16 +177,20 @@ export class DeepResearchAdapterAgent extends AbstractAgent {
     });
 
     // LangGraph 运行配置：thread_id 用于把状态（checkpoints）与 thread 关联
+    const controller = new AbortController();
+
     const config = {
       version: "v2" as const,
       configurable: {
         thread_id: input.threadId,
       },
+      signal: controller.signal,
     };
 
     context.agent = agent;
     context.userPrompt = userPrompt;
     context.config = config;
+    context.abort = controller;
   }
 
   /**

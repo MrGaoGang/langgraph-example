@@ -4,6 +4,7 @@ import { createAgent } from "../agents/agentFactory";
 import { getModel } from "../model/model";
 import { PLANNER_SYSTEM_PROMPT } from "../prompts/prompts";
 import { Agent } from "../types";
+import { getCurrentTaskInput } from "@langchain/langgraph";
 
 export function createPlannerAgent(): Agent {
   const model = getModel({ temperature: 0.2 });
@@ -16,6 +17,8 @@ export function createPlannerAgent(): Agent {
 export const planResearchTool = tool(
   async ({ request, context }) => {
     try {
+      const state = getCurrentTaskInput();
+      console.log("planResearchTool can get state=", state);
       let planRequest = "";
 
       if (context) {

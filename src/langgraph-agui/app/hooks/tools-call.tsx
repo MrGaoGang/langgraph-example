@@ -88,7 +88,11 @@ export function useToolsCallHooks() {
               结果：
             </div>
             <pre className="code" style={{ whiteSpace: "pre-wrap" }}>
-              <ResearchPlanPreview value={result?.plan} collapsed={false} />
+              {result?.plan ? (
+                <ResearchPlanPreview value={result?.plan} collapsed={false} />
+              ) : (
+                <div>{result}</div>
+              )}
             </pre>
           </div>
         );
@@ -255,10 +259,10 @@ export function useToolsCallHooks() {
 
     render: ({ args }: { args: Record<string, unknown> }) => {
       console.log("web_search args:", args);
-    
+
       const { query } = args || {};
-      if(!query){
-        return null
+      if (!query) {
+        return null;
       }
       return (
         <div className="app-section">

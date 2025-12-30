@@ -13,6 +13,7 @@ import { toolOutputSubject } from "./middleware/tools-output";
 
 export interface DeepResearchAgentConfig extends DeepResearchOptions {}
 
+export type  DeepModeMainAgentType = ReturnType<typeof createSupervisorAgent>
 /**
  * 接口层：统一对外入口。
  * - 接收标准化 DeepResearchRequest
