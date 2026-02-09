@@ -99,7 +99,6 @@ async function run() {
     process.env.DEEP_IMAGE_INPUT ?? path.resolve("test/assets/input.jpg");
   const image = loadLocalImageAsBase64(inputPath);
 
-  console.log("[simple] input:", { inputPath, hasImage: Boolean(image.base64) });
 
   const result = await agent.generate({
     mode: "SIMPLE",
@@ -107,7 +106,6 @@ async function run() {
     image
   });
 
-  console.log("[simple] result:", JSON.stringify(result, null, 2));
 
   if (result.type === "image") {
     await saveGeneratedImage({

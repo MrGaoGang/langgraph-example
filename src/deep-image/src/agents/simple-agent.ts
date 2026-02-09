@@ -3,6 +3,7 @@ import { DeepImageRequest, GeneratedImage } from "../types";
 import { getChatModel } from "../model/chat";
 import { generateImage } from "../model/image";
 import { toImageUrlOrDataUrl } from "../utils/image";
+import { logger } from "../utils/friendly-log";
 
 async function enrichPromptWithReferenceImage(params: {
   prompt: string;
@@ -65,6 +66,7 @@ export async function runSimpleAgent(request: DeepImageRequest) {
     format: request.output?.format,
     model: 'bytedance-seed/seedream-4.5',
   });
-
+  logger.success(`[simple-agent] generated image url: ${image.data}`);
+  
   return { image, raw };
 }

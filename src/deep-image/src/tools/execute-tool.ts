@@ -5,7 +5,8 @@ import { getChatModel } from "../model/chat";
 import { generateImage } from "../model/image";
 import { DeepImagePlan, GeneratedImage } from "../types";
 import { toImageUrlOrDataUrl } from "../utils/image";
-
+import { planSchema } from "./plan-tool";
+import { logger } from "../utils/friendly-log";
 const EXECUTOR_SYSTEM_PROMPT = `
 你是 DeepImage 的 Executor（执行 Agent）。
 
@@ -14,8 +15,6 @@ const EXECUTOR_SYSTEM_PROMPT = `
 {
   "finalPrompt": string,
   "size"?: string,
-  "model"?: string,
-  "format"?: "b64_json" | "url"
 }
 
 要求：
@@ -23,25 +22,11 @@ const EXECUTOR_SYSTEM_PROMPT = `
 - finalPrompt 必须可直接用于图片生成 API(必须基于用户输入的图片及诉求)。
 `.trim();
 
-const planSchema = z.object({
-  goal: z.string(),
-  finalPrompt: z.string(),
-  negativePrompt: z.string().optional(),
-  size: z.string().optional(),
-  steps: z.array(
-    z.object({
-      id: z.string(),
-      title: z.string(),
-      content: z.string(),
-    })
-  ),
-});
+
 
 const execOutSchema = z.object({
   finalPrompt: z.string(),
   size: z.string().optional(),
-  model: z.string().optional(),
-  format: z.enum(["b64_json", "url"]).optional(),
 });
 
 function extractFirstJson(text: string) {
@@ -71,9 +56,10 @@ export async function executeImagePlan(params: {
   content += `\n\n已确认的计划（JSON）：\n${JSON.stringify(parsedPlan)}`;
   content += `\n\n请输出 JSON。`;
 
+  logger.log(`[executeImagePlan] 原始输入:`, content);
   const result = await agent.invoke({ messages: [{ role: "user", content }] });
   const last = result.messages[result.messages.length - 1]?.content ?? "";
-  console.log(`[executeImagePlan] 原始输出：${JSON.stringify(result)}`);
+  logger.success(`[executeImagePlan] prompt 优化结果：${JSON.stringify(result)}`);
 
   const jsonText = extractFirstJson(last);
   const execParsed = execOutSchema.safeParse(JSON.parse(jsonText));
@@ -81,12 +67,13 @@ export async function executeImagePlan(params: {
     throw new Error(`Executor output is not valid JSON: ${execParsed.error.message}`);
   }
 
-  console.log(`[executeImagePlan] 执行计划：${JSON.stringify(execParsed.data)}`);
+  logger.log(`[executeImagePlan] 执行计划：${JSON.stringify(execParsed.data)}`);
   const effectivePrompt = execParsed.data.finalPrompt ?? parsedPlan.finalPrompt;
   const size = params.output?.size ?? execParsed.data.size ?? parsedPlan.size;
   const format = params.output?.format ?? execParsed.data.format;
   const model = 'bytedance-seed/seedream-4.5';
 
+  logger.log(`[executeImagePlan] 执行 prompt：${effectivePrompt}`);
   const image = await generateImage({
     prompt: effectivePrompt,
     imageUrls: imageRef ? [imageRef] : undefined,

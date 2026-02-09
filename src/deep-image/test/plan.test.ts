@@ -85,7 +85,7 @@ async function saveGeneratedImage(params: {
     await fs.promises.writeFile(outPath, buf);
     console.log(`[simple] 图片已保存(base64)：${outPath}`);
     return;
-  } 
+  }
 
   const outPath = path.join(params.outDir, `${params.name}.png`);
   await downloadToFile(params.image.data, outPath);
@@ -130,13 +130,12 @@ async function run() {
   const execResult = await agent.generate({
     mode: "PLAN",
     prompt:
-      process.env.DEEP_IMAGE_EXEC_PROMPT ??
+      planResult?.plan?.finalPrompt ??
       "游戏CG风格，极具艺术感、震撼人心，色彩丰富，暗部叠加，特写镜头，超高清。落叶飞溅、前景落叶虚化，动态模糊，背景动态虚化，阳光灿烂，蓝天白云，光影交错，仰拍特写镜头，突出速度感和视觉冲击力，强透视。原比例。原比例。原比例。原比例",
     image,
     plan,
   });
 
-  console.log("[plan] exec result:", JSON.stringify(execResult, null, 2));
 
   if (execResult.type === "image") {
     await saveGeneratedImage({

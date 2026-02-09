@@ -1,6 +1,7 @@
 import { OpenAI, type ChatCompletionMessage } from "openai";
 import { DeepImageOutputFormat, GeneratedImage } from "../types";
 import { defaultSystemPrompt } from "../prompt/system-prompt";
+import { logger } from "../utils/friendly-log";
 
 let cachedClient: OpenAI | undefined;
 
@@ -53,9 +54,7 @@ export async function generateImage(params: {
   const client = getOpenRouterClient();
 
   const model =
-    params.model ??
-    process.env.IMAGE_MODEL ??
-    "google/gemini-2.5-flash-image";
+    params.model ?? process.env.IMAGE_MODEL ?? "google/gemini-2.5-flash-image";
 
   const format: DeepImageOutputFormat = params.format ?? "url";
 
@@ -63,14 +62,14 @@ export async function generateImage(params: {
     {
       type: "text",
       text: params.size
-        ? `${params.prompt}\n\n输出尺寸偏好：${params.size}`
+        ? `${params.prompt}\n\n Output image scale：${params.size}`
         : params.prompt,
     },
   ];
   if (!params.imageUrls?.length) {
     throw new Error("imageUrls is required");
   }
-  console.log(`[image] imageUrls: ${params.imageUrls?.length}`);
+  logger.log(`[image] imageUrls: ${params.imageUrls?.length}`);
   (params.imageUrls ?? []).forEach((url) => {
     contents.push({
       type: "image_url",
@@ -82,9 +81,7 @@ export async function generateImage(params: {
     messages: [
       {
         role: "system",
-        content:
-          params.systemPrompt ??
-          defaultSystemPrompt,
+        content: params.systemPrompt ?? defaultSystemPrompt,
       },
       {
         role: "user",
@@ -93,11 +90,15 @@ export async function generateImage(params: {
     ],
   });
 
-  const msg = response.choices?.[0]?.message as (ChatCompletionMessage & {
-    images?: { image_url: { url: string } }[];
-  }) | null;
+  const msg = response.choices?.[0]?.message as
+    | (ChatCompletionMessage & {
+        images?: { image_url: { url: string } }[];
+      })
+    | null;
 
-  const urls = msg?.images?.map((ele: any) => ele?.image_url?.url).filter(Boolean);
+  const urls = msg?.images
+    ?.map((ele: any) => ele?.image_url?.url)
+    .filter(Boolean);
   const firstUrl = urls?.[0];
 
   if (!firstUrl) {
@@ -106,7 +107,7 @@ export async function generateImage(params: {
       `OpenRouter image generation returned no images. content=${fallback}`
     );
   }
-  console.log(`[image] generated image url: ${firstUrl}`);
+  logger.success(`[image] generated image url:`, firstUrl);
 
   return {
     format: format === "b64_json" ? "url" : format,

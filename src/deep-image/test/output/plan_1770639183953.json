@@ -1,0 +1,22 @@
+{
+  "goal": "生成一张游戏CG风格的图片，表现极具艺术感、震撼人心、色彩丰富、暗部叠加、特写镜头、超高清的画面。画面中包含落叶飞溅、前景落叶虚化、动态模糊、背景动态虚化、阳光灿烂、蓝天白云、光影交错，并采用仰拍特写镜头，突出速度感和视觉冲击力，强透视。",
+  "finalPrompt": "Game CG style, highly artistic, breathtaking, rich colors, dark overlay, close-up shot, ultra high definition. Splashing autumn leaves, blurred foreground leaves, motion blur, blurred background, bright sunshine, blue sky and white clouds, interplay of light and shadow, low-angle close-up shot, emphasizing speed and visual impact, strong perspective.",
+  "size": "原图比例",
+  "steps": [
+    {
+      "id": "1",
+      "title": "理解图片内容",
+      "content": "当前图片的主体是一只猫站在阳台栏杆上，背景是城市建筑和蓝天。光线明亮，猫的毛发颜色为橘白相间。"
+    },
+    {
+      "id": "2",
+      "title": "用户诉求",
+      "content": "生成一张游戏CG风格的图片，极具艺术感、震撼人心，色彩丰富，暗部叠加，特写镜头，超高清。画面中包含落叶飞溅、前景落叶虚化，动态模糊，背景动态虚化，阳光灿烂，蓝天白云，光影交错，仰拍特写镜头，突出速度感和视觉冲击力，强透视。"
+    },
+    {
+      "id": "3",
+      "title": "优化方向",
+      "content": "将原图中的猫咪和背景元素转化为游戏CG风格，增加艺术感和震撼力。通过色彩丰富和暗部叠加来增强画面深度。运用特写镜头和超高清细节来提升视觉质量。引入落叶飞溅、前景落叶虚化和动态模糊来营造速度感和动感。强调阳光灿烂、蓝天白云和光影交错，以增强画面的明亮度和层次感。采用仰拍特写镜头和强透视来突出视觉冲击力。"
+    }
+  ]
+}

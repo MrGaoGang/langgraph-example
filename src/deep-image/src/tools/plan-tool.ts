@@ -4,6 +4,7 @@ import { createAgent } from "../agents/agentFactory";
 import { getChatModel } from "../model/chat";
 import { DeepImagePlan } from "../types";
 import { toImageUrlOrDataUrl } from "../utils/image";
+import { logger } from "../utils/friendly-log";
 
 const PLAN_SYSTEM_PROMPT = `
 # 角色:
@@ -27,9 +28,7 @@ const PLAN_SYSTEM_PROMPT = `
    - 步骤需包括以下关键环节：
      1. 理解图片内容：读取图片内容，对图片进行分析，提取图片中的关键元素、特征、颜色、主题等。
      2. 用户诉求：明确用户的目标和期望效果。
-     3. 优化方向：提出优化图片生成的策略（如风格调整、细节增强、色调调整）。
-     4. 生成：根据整理的提示词进行图片生成。
-     5. 质检：检查生成图片是否符合用户需求，并提出改进建议。
+     3. 优化方向：提出明确的  优化图片生成的策略（如风格如何调整、调整哪些细节增强、色调如何调整）。
 3. **生成 finalPrompt**：
    - 整合用户需求和优化方向，生成一个可直接用于图片生成 API 的完整提示词。
 4. **构建 JSON 输出**：
@@ -67,13 +66,12 @@ const PLAN_SYSTEM_PROMPT = `
 
 ## 示例:
 
-输入：用户希望生成一张清晨的森林景观，画面需要表现阳光穿过树叶的效果，避免出现过于浓重的雾气。
+输入：生成一张清晨的森林景观，画面需要表现阳光穿过树叶的效果，避免出现过于浓重的雾气。
 输出：
 {
   "goal": "生成一张清晨的森林景观，表现阳光穿过树叶的效果。",
   "finalPrompt": "A serene forest in the early morning, sunlight filtering through the leaves, soft and natural lighting, detailed and vibrant, peaceful atmosphere.",
   "negativePrompt": "heavy fog, unnatural lighting, low detail.",
-  "size": "原图尺寸",
   "steps": [
     {
       "id": "1",
@@ -83,28 +81,18 @@ const PLAN_SYSTEM_PROMPT = `
     {
       "id": "2",
       "title": "用户诉求",
-      "content": "希望画面表现阳光穿过树叶的效果，避免出现过于浓重的雾气"
+      "content": "生成一张清晨的森林景观，画面需要表现阳光穿过树叶的效果，避免出现过于浓重的雾气"
     },
     {
       "id": "3",
       "title": "优化方向",
       "content": "增加阳光的自然光线，突出阳光穿过树叶的自然效果，产生丁达尔光，避免浓重雾气，并确保画面清晰和自然。"
-    },
-    {
-      "id": "4",
-      "title": "生成",
-      "content": "使用整理后的 finalPrompt 通过图片生成 API 生成图片。"
-    },
-    {
-      "id": "5",
-      "title": "质检",
-      "content": "检查生成图片是否符合阳光穿过树叶的效果、自然光线和尺寸要求，若不符合，进一步优化提示词。"
     }
   ]
 }
 `.trim();
 
-const planSchema = z.object({
+export const planSchema = z.object({
   goal: z.string(),
   finalPrompt: z.string(),
   negativePrompt: z.string().optional(),
@@ -156,7 +144,7 @@ export async function planImage(params: {
       },
     ],
   });
-  console.log(`[planImage] 原始输出：${JSON.stringify(result)}`);
+  logger.success(`[planImage] 原始输出：${JSON.stringify(result)}`);
   const last = result.messages[result.messages.length - 1]?.content ?? "";
 
   const jsonText = extractFirstJson(last);
