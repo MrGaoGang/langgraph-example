@@ -44,8 +44,7 @@ export interface DeepImageDecision {
 export interface DeepImagePlanStep {
   id: string;
   title: string;
-  instruction: string;
-  rationale?: string;
+  content: string;
 }
 
 export interface DeepImagePlan {

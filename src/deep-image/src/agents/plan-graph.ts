@@ -56,7 +56,7 @@ export async function getPlanGraph(): Promise<any> {
         if (!state.request.plan) {
           throw new Error("executeImage 节点需要 request.plan");
         }
-
+        console.log(`[executeImage] 执行计划：${JSON.stringify(state.request.plan)}`);
         const imageJson = await executeImageTool.invoke({
           prompt: state.request.prompt,
           context: state.request.context,

@@ -9,7 +9,7 @@ async function enrichPromptWithReferenceImage(params: {
   imageUrl: string;
   context?: string;
 }) {
-  const model = getChatModel({ temperature: 0.2 });
+  const model = getChatModel({ temperature: 0.2, modelName: "google/gemini-2.5-flash-image" });
 
   const system = new SystemMessage(
     [
@@ -46,24 +46,22 @@ export async function runSimpleAgent(request: DeepImageRequest) {
   let finalPrompt = request.prompt;
   let raw: unknown;
 
-  if (imageUrl) {
-    try {
-      const enriched = await enrichPromptWithReferenceImage({
-        prompt: request.prompt,
-        imageUrl,
-        context: request.context,
-      });
-      finalPrompt = enriched;
-      raw = { enrichedPrompt: enriched };
-    } catch {
-      finalPrompt = `${request.prompt}\n\n参考图片：${imageUrl}`;
-    }
-  }
-
+  // if (imageUrl) {
+  //   try {
+  //     const enriched = await enrichPromptWithReferenceImage({
+  //       prompt: request.prompt,
+  //       imageUrl,
+  //       context: request.context,
+  //     });
+  //     finalPrompt = enriched;
+  //     raw = { enrichedPrompt: enriched };
+  //   } catch {
+  //     finalPrompt = `${request.prompt}\n\n参考图片：${imageUrl}`;
+  //   }
+  // }
   const image = await generateImage({
     prompt: finalPrompt,
     imageUrls: imageUrl ? [imageUrl] : undefined,
-    size: request.output?.size,
     format: request.output?.format,
     model: request.output?.model,
   });

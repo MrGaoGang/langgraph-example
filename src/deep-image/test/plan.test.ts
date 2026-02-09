@@ -6,6 +6,7 @@ import https from "node:https";
 
 import { DeepImageAgent } from "../src";
 import type { DeepImagePlan, ImageInput } from "../src/types";
+import { extractBase64Payload, isBase64 } from "../src/utils/base64";
 
 function guessMimeType(filePath: string): string {
   const ext = path.extname(filePath).toLowerCase();
@@ -76,13 +77,15 @@ async function saveGeneratedImage(params: {
 }) {
   await fs.promises.mkdir(params.outDir, { recursive: true });
 
-  if (params.image.format === "b64_json") {
+  if (isBase64(params.image.data)) {
     const outPath = path.join(params.outDir, `${params.name}.png`);
-    const buf = Buffer.from(params.image.data, "base64");
+    const base64 = extractBase64Payload(params.image.data);
+    if (!base64) throw new Error("图片数据看起来像 base64，但无法解析 payload");
+    const buf = Buffer.from(base64, "base64");
     await fs.promises.writeFile(outPath, buf);
-    console.log(`[plan] 图片已保存(b64_json)：${outPath}`);
+    console.log(`[simple] 图片已保存(base64)：${outPath}`);
     return;
-  }
+  } 
 
   const outPath = path.join(params.outDir, `${params.name}.png`);
   await downloadToFile(params.image.data, outPath);
@@ -93,7 +96,7 @@ async function run() {
   const agent = new DeepImageAgent();
 
   const inputPath =
-    process.env.DEEP_IMAGE_INPUT ?? path.resolve("test/assets/input.png");
+    process.env.DEEP_IMAGE_INPUT ?? path.resolve("test/assets/input.jpg");
   const image = loadLocalImageAsBase64(inputPath);
   const outDir = path.resolve("test/output");
   const stamp = Date.now();
@@ -105,7 +108,7 @@ async function run() {
     mode: "PLAN",
     prompt:
       process.env.DEEP_IMAGE_PROMPT ??
-      "请先给出图片生成计划：主体是猫咪，赛博朋克霓虹氛围，电影光效",
+      "游戏CG风格，极具艺术感、震撼人心，色彩丰富，暗部叠加，特写镜头，超高清。落叶飞溅、前景落叶虚化，动态模糊，背景动态虚化，阳光灿烂，蓝天白云，光影交错，仰拍特写镜头，突出速度感和视觉冲击力，强透视。原比例。原比例。原比例。原比例",
     image,
     context: process.env.DEEP_IMAGE_CONTEXT,
   });
@@ -128,14 +131,9 @@ async function run() {
     mode: "PLAN",
     prompt:
       process.env.DEEP_IMAGE_EXEC_PROMPT ??
-      "确认按计划执行；把整体色调更偏紫+蓝的霓虹，并增加一点颗粒质感。",
+      "游戏CG风格，极具艺术感、震撼人心，色彩丰富，暗部叠加，特写镜头，超高清。落叶飞溅、前景落叶虚化，动态模糊，背景动态虚化，阳光灿烂，蓝天白云，光影交错，仰拍特写镜头，突出速度感和视觉冲击力，强透视。原比例。原比例。原比例。原比例",
     image,
     plan,
-    output: {
-      size: process.env.DEEP_IMAGE_SIZE ?? plan.size ?? "1024x1024",
-      format: "url",
-      model: process.env.IMAGE_MODEL,
-    },
   });
 
   console.log("[plan] exec result:", JSON.stringify(execResult, null, 2));

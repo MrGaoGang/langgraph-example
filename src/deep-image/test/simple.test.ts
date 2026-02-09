@@ -103,7 +103,7 @@ async function run() {
 
   const result = await agent.generate({
     mode: "SIMPLE",
-    prompt: `Create 9 anime emoticon IP characters based on user-entered pictures`,
+    prompt: `Extract the main subject from the image,Create 9 anime emoticon IP characters based on user-entered pictures`,
     image
   });
 

@@ -20,7 +20,7 @@ const EXECUTOR_SYSTEM_PROMPT = `
 
 要求：
 - 将用户的最新诉求合并进 plan（如用户提出改动，以用户为准）。
-- finalPrompt 必须可直接用于图片生成 API。
+- finalPrompt 必须可直接用于图片生成 API(必须基于用户输入的图片及诉求)。
 `.trim();
 
 const planSchema = z.object({
@@ -32,8 +32,7 @@ const planSchema = z.object({
     z.object({
       id: z.string(),
       title: z.string(),
-      instruction: z.string(),
-      rationale: z.string().optional(),
+      content: z.string(),
     })
   ),
 });
@@ -82,6 +81,7 @@ export async function executeImagePlan(params: {
     throw new Error(`Executor output is not valid JSON: ${execParsed.error.message}`);
   }
 
+  console.log(`[executeImagePlan] 执行计划：${JSON.stringify(execParsed.data)}`);
   const effectivePrompt = execParsed.data.finalPrompt;
   const size = params.output?.size ?? execParsed.data.size ?? parsedPlan.size;
   const format = params.output?.format ?? execParsed.data.format;

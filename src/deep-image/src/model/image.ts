@@ -67,7 +67,10 @@ export async function generateImage(params: {
         : params.prompt,
     },
   ];
-
+  if (!params.imageUrls?.length) {
+    throw new Error("imageUrls is required");
+  }
+  console.log(`[image] imageUrls: ${params.imageUrls?.length}`);
   (params.imageUrls ?? []).forEach((url) => {
     contents.push({
       type: "image_url",

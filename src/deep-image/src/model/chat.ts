@@ -1,11 +1,5 @@
 import { ChatOpenAI, ChatOpenAICallOptions } from "@langchain/openai";
 
-function normalizeModelName(baseURL: string | undefined, model: string) {
-  if (baseURL?.includes("openrouter.ai") && !model.includes("/")) {
-    return `openai/${model}`;
-  }
-  return model;
-}
 
 export function getChatModel(
   options?: ChatOpenAICallOptions & { temperature?: number; modelName?: string }
@@ -16,12 +10,10 @@ export function getChatModel(
 
   const apiKey = process.env.OPENROUTER_API_KEY ?? process.env.OPENAI_API_KEY;
 
-  const rawModel =
+  const modelName =
     options?.modelName ??
     process.env.OPENAI_MODEL ??
-    (baseURL?.includes("openrouter.ai") ? "gpt-4o-mini" : "gpt-4o-mini");
-
-  const modelName = normalizeModelName(baseURL, rawModel);
+    (baseURL?.includes("openrouter.ai") ? "openai/gpt-4o-mini" : "gpt-4o-mini");
 
   return new ChatOpenAI({
     modelName,
