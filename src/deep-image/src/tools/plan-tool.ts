@@ -25,9 +25,9 @@ const PLAN_SYSTEM_PROMPT = `
 2. **制定计划**：
    - 根据用户需求，设计图片生成的具体步骤。
    - 步骤需包括以下关键环节：
-     1. 理解图片内容：分析用户的描述并提取核心信息。
+     1. 理解图片内容：读取图片内容，对图片进行分析，提取图片中的关键元素、特征、颜色、主题等。
      2. 用户诉求：明确用户的目标和期望效果。
-     3. 优化方向：提出优化图片生成的策略（如风格调整、细节增强）。
+     3. 优化方向：提出优化图片生成的策略（如风格调整、细节增强、色调调整）。
      4. 生成：根据整理的提示词进行图片生成。
      5. 质检：检查生成图片是否符合用户需求，并提出改进建议。
 3. **生成 finalPrompt**：
@@ -78,7 +78,7 @@ const PLAN_SYSTEM_PROMPT = `
     {
       "id": "1",
       "title": "理解图片内容",
-      "content": "图片主题为清晨的森林景观，重点在阳光穿过树叶的效果。"
+      "content": "当前图片的主体为森林，整体色调为自然的绿色，背景为白色。"
     },
     {
       "id": "2",
@@ -88,7 +88,7 @@ const PLAN_SYSTEM_PROMPT = `
     {
       "id": "3",
       "title": "优化方向",
-      "content": "调整提示词以突出阳光穿过树叶的自然效果，避免浓重雾气，并确保画面清晰和自然。"
+      "content": "增加阳光的自然光线，突出阳光穿过树叶的自然效果，产生丁达尔光，避免浓重雾气，并确保画面清晰和自然。"
     },
     {
       "id": "4",
@@ -131,7 +131,10 @@ export async function planImage(params: {
   image?: { url?: string; base64?: string; mimeType?: string };
 }): Promise<{ plan: DeepImagePlan; raw?: unknown }> {
   const agent = createAgent({
-    model: getChatModel({ temperature: 0.2, modelName: 'google/gemini-3-flash-preview' }),
+    model: getChatModel({
+      temperature: 0.2,
+      modelName: 'google/gemini-2.5-flash-image',
+    }),
     systemPrompt: PLAN_SYSTEM_PROMPT,
   });
 
@@ -139,17 +142,30 @@ export async function planImage(params: {
 
   let content = `用户需求：${params.prompt}`;
   if (params.context) content += `\n\n补充上下文：\n${params.context}`;
-  if (imageRef) content += `\n\n参考图片：${imageRef}`;
+  if (imageRef) content += `\n\n`;
   content += `\n\n请输出 JSON。`;
 
-  const result = await agent.invoke({ messages: [{ role: "user", content }] });
+  const result = await agent.invoke({
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: content },
+          { type: "image_url", image_url: { url: imageRef } },
+        ],
+      },
+    ],
+  });
+  console.log(`[planImage] 原始输出：${JSON.stringify(result)}`);
   const last = result.messages[result.messages.length - 1]?.content ?? "";
 
   const jsonText = extractFirstJson(last);
   const parsed = planSchema.safeParse(JSON.parse(jsonText));
 
   if (!parsed.success) {
-    throw new Error(`Planner output is not valid plan JSON: ${parsed.error.message}`);
+    throw new Error(
+      `Planner output is not valid plan JSON: ${parsed.error.message}`
+    );
   }
 
   return { plan: parsed.data, raw: { llmOutput: last } };
@@ -165,7 +181,8 @@ export const planImageTool = tool(
   },
   {
     name: "plan_image",
-    description: "为图片生成需求制定结构化计划（JSON），供用户确认/修改后再执行。",
+    description:
+      "为图片生成需求制定结构化计划（JSON），供用户确认/修改后再执行。",
     schema: z.object({
       prompt: z.string().describe("用户的图片生成需求"),
       context: z.string().optional().describe("补充上下文（可选）"),

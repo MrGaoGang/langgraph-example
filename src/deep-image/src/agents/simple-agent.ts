@@ -63,7 +63,7 @@ export async function runSimpleAgent(request: DeepImageRequest) {
     prompt: finalPrompt,
     imageUrls: imageUrl ? [imageUrl] : undefined,
     format: request.output?.format,
-    model: request.output?.model,
+    model: 'bytedance-seed/seedream-4.5',
   });
 
   return { image, raw };

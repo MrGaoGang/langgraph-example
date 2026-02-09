@@ -62,18 +62,18 @@ export async function executeImagePlan(params: {
   const imageRef = toImageUrlOrDataUrl(params.image);
 
   const agent = createAgent({
-    model: getChatModel({ temperature: 0.2 }),
+    model: getChatModel({ temperature: 0.2, modelName: 'openai/gpt-4o-mini' }),
     systemPrompt: EXECUTOR_SYSTEM_PROMPT,
   });
 
   let content = `用户最新诉求：${params.prompt}`;
   if (params.context) content += `\n\n补充上下文：\n${params.context}`;
-  if (imageRef) content += `\n\n参考图片：${imageRef}`;
   content += `\n\n已确认的计划（JSON）：\n${JSON.stringify(parsedPlan)}`;
   content += `\n\n请输出 JSON。`;
 
   const result = await agent.invoke({ messages: [{ role: "user", content }] });
   const last = result.messages[result.messages.length - 1]?.content ?? "";
+  console.log(`[executeImagePlan] 原始输出：${JSON.stringify(result)}`);
 
   const jsonText = extractFirstJson(last);
   const execParsed = execOutSchema.safeParse(JSON.parse(jsonText));
@@ -82,10 +82,10 @@ export async function executeImagePlan(params: {
   }
 
   console.log(`[executeImagePlan] 执行计划：${JSON.stringify(execParsed.data)}`);
-  const effectivePrompt = execParsed.data.finalPrompt;
+  const effectivePrompt = execParsed.data.finalPrompt ?? parsedPlan.finalPrompt;
   const size = params.output?.size ?? execParsed.data.size ?? parsedPlan.size;
   const format = params.output?.format ?? execParsed.data.format;
-  const model = params.output?.model ?? execParsed.data.model;
+  const model = 'bytedance-seed/seedream-4.5';
 
   const image = await generateImage({
     prompt: effectivePrompt,
