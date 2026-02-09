@@ -2,3 +2,4 @@ packages:
   - 'src/deep-research'
   - 'src/langgraph-agui'
   - 'src/langgraph-cli'
+  - 'src/deep-image'
